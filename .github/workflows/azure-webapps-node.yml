@@ -22,43 +22,32 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-
-    - name: npm install, build, and test
+    - name: Extract tag info
+      id: extract_tag
       run: |
-        npm install
-        npm run build
-        npm run test
+        BRANCH=release
+        TAG=24.3.0
+        AZURE_REGION=canadacentral
+        CUSTOMER_FULL_NAME=AutoQA
+        echo "AZURE_REGION=$AZURE_REGION" >> $GITHUB_ENV
+        echo "CUSTOMER_FULL_NAME=$CUSTOMER_FULL_NAME" >> $GITHUB_ENV
 
-    - name: Upload artifact for deployment job
-      uses: actions/upload-artifact@v3
-      with:
-        name: node-app
-        path: .
 
-  deploy:
-    permissions:
-      contents: none
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: 'Development'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    - name: Set environment variables
+      run: |
+        echo "Setting environment variables"
+        echo "CUSTOMER_KEY=${{ secrets.CUSTOMER_KEY }}" >> $GITHUB_ENV
+        echo "IMAGE_VERSION=${{ secrets.IMAGE_VERSION }}" >> $GITHUB_ENV
+        echo "PRODUCT_TYPE=${{ secrets.PRODUCT_TYPE }}" >> $GITHUB_ENV
 
-    steps:
-    - name: Download artifact from build job
-      uses: actions/download-artifact@v3
-      with:
-        name: node-app
-
-    - name: 'Deploy to Azure WebApp'
-      id: deploy-to-webapp
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+    # Deploy to Azure
+    - name: Deploy Azure resources
+      run: |
+        echo "Deploying to Azure region: $AZURE_REGION for customer: $CUSTOMER_FULL_NAME"
+        az deployment group create --resource-group $CUSTOMER_FULL_NAME-rg \
+                                   --template-file ./azuredeploy.json \
+                                   --parameters customerName=$CUSTOMER_FULL_NAME \
+                                                customerKey=$CUSTOMER_KEY \
+                                                imageVersion=$IMAGE_VERSION \
+                                                productType=$PRODUCT_TYPE \
+      
