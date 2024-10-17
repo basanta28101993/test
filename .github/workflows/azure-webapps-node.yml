@@ -5,7 +5,7 @@ on:
     inputs:
       environment:
       required: true
-      default: stop
+      default: Deploy
       description: "this is test workflow"
       type: choice
       option :
