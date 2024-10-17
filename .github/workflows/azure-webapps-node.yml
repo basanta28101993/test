@@ -16,7 +16,6 @@ on:
       option :
        - Deploy
        - Destroy          
-
 jobs:
   build:
     runs-on: ubuntu-latest
