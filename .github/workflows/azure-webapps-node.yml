@@ -1,6 +1,7 @@
 on:
   workflow_dispatch:
     inputs:
+     my_input:
      environment:
       required: true
       default: Deploy
